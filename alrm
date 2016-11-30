@@ -1,0 +1,23 @@
+#!/bin/zsh
+if [[ -z "$*" ]]; then
+    echo -n "When? - "
+    read WHEN
+else
+    WHEN="$*"
+fi
+date -d $WHEN >/dev/null || exit
+echo Alarm will sound: $(date -d $WHEN) \[in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours\]
+DTS=$(date -d $WHEN +%s)
+while [[ $(date +%s) -lt $DTS ]]; do
+    sleep 1m
+done
+PAUSE=20
+while true; do
+    mpv --shuffle ~/Music/alarmtone
+    echo Repeating in $PAUSE minutes; sleep ${PAUSE}m
+done
+
+edit() { vim $(date "+%Y-%m-%d").txt }
+
+trap edit SIGINT
+
