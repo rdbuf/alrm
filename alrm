@@ -1,27 +1,28 @@
 #!/bin/zsh
+PAUSE=20
 if [[ -z "$*" ]]; then
-    echo -n "When? - "
-    read WHEN
+    echo -n "provide the time." >&2
+    exit 1
 else
     WHEN="$*"
 fi
 date -d $WHEN >/dev/null || exit
+DEST_TIME=$(date -d $WHEN +%s)
 
-echo Alarm will sound: $(date -d $WHEN) \[in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours\]
+echo "Alarm will sound: $(date -d $WHEN) [in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours]"
 
-EXEC=${0:a:h}/postwakeup.sh
+rtcwake -t $DEST_TIME -m no
+
 hook() { 
-    zsh ${EXEC}
+    ${0:a:h}/postwakeup.sh
     exit
 }
 trap hook SIGINT
 
-DTS=$(date -d $WHEN +%s)
-while [[ $(date +%s) -lt $DTS ]]; do
+while [[ $(date +%s) -lt $DEST_TIME ]]; do
     sleep 1m
 done
 
-PAUSE=20
 while true; do
     mpv --shuffle ~/Music/alarmtone
     echo Repeating in $PAUSE minutes; sleep ${PAUSE}m
