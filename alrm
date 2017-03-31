@@ -9,12 +9,20 @@ fi
 date -d $WHEN >/dev/null || exit
 DEST_TIME=$(date -d $WHEN +%s)
 
-echo "Alarm will sound: $(date -d $WHEN) [in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours]"
 
-rtcwake -t $DEST_TIME -m no
+zmodload zsh/mathfunc
+DIFFSEC=$(($(date -d $WHEN +%s) - $(date +%s)))
+HOURS=$((int($DIFFSEC / 60. / 60. )))
+MINUTES=$((int(($DIFFSEC - $HOURS * 60 * 60) / 60.)))
+# echo "Alarm will sound: $(date -d $WHEN) [in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours]"
+printf "Alarm will sound at %s [in %d:%02d from now]\n" "$(date -d $WHEN)" $HOURS $MINUTES
+# echo "Alarm will sound: $(date -d $WHEN) [in $HOURS:$MINUTES]"
+
+rtcwake -t $DEST_TIME -m no  # /usr/bin/chmod ugo+r /dev/rtc0 
+                             # for this to work
 
 hook() { 
-    ${0:a:h}/postwakeup.sh
+    # ~/r/alrm/postwakeup.sh
     exit
 }
 trap hook SIGINT
@@ -24,7 +32,7 @@ while [[ $(date +%s) -lt $DEST_TIME ]]; do
 done
 
 while true; do
-    mpv --shuffle ~/Music/alarmtone
+    mpv --shuffle --no-video ~/Music/alarmtone
     echo Repeating in $PAUSE minutes; sleep ${PAUSE}m
 done
 
