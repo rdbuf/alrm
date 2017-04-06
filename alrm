@@ -14,9 +14,7 @@ zmodload zsh/mathfunc
 DIFFSEC=$(($(date -d $WHEN +%s) - $(date +%s)))
 HOURS=$((int($DIFFSEC / 60. / 60. )))
 MINUTES=$((int(($DIFFSEC - $HOURS * 60 * 60) / 60.)))
-# echo "Alarm will sound: $(date -d $WHEN) [in $((($(date -d $WHEN +%s) - $(date +%s)) / 60.0 / 60.0)) hours]"
 printf "Alarm will sound at %s [in %d:%02d from now]\n" "$(date -d $WHEN)" $HOURS $MINUTES
-# echo "Alarm will sound: $(date -d $WHEN) [in $HOURS:$MINUTES]"
 
 rtcwake -t $DEST_TIME -m no  # /usr/bin/chmod ugo+r /dev/rtc0 
                              # for this to work
@@ -33,6 +31,7 @@ done
 
 while true; do
     mpv --shuffle --no-video ~/Music/alarmtone
+    espeak "$(date +%H:%M)"
     echo Repeating in $PAUSE minutes; sleep ${PAUSE}m
 done
 
