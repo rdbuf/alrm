@@ -1,37 +1,51 @@
 #!/bin/zsh
-PAUSE=20
+zmodload zsh/mathfunc
+autoload colors
+if [[ "$terminfo[colors]" -gt 8 ]]; then
+    colors
+fi
+for COLOR in RED GREEN YELLOW BLUE MAGENTA CYAN BLACK WHITE; do
+    eval $COLOR='$fg_no_bold[${(L)COLOR}]'
+    eval BOLD_$COLOR='$fg_bold[${(L)COLOR}]'
+done
+eval RESET='$reset_color'
+
 if [[ -z "$*" ]]; then
     echo -n "provide the time." >&2
     exit 1
 else
-    WHEN="$*"
+    UNPARSED="$*"
 fi
-date -d $WHEN >/dev/null || exit
-DEST_TIME=$(date -d $WHEN +%s)
+date -d $UNPARSED >/dev/null || exit
 
+PAUSE=$((15))  # minutes
 
-zmodload zsh/mathfunc
-DIFFSEC=$(($(date -d $WHEN +%s) - $(date +%s)))
-HOURS=$((int($DIFFSEC / 60. / 60. )))
-MINUTES=$((int(($DIFFSEC - $HOURS * 60 * 60) / 60.)))
-printf "Alarm will sound at %s [in %d:%02d from now]\n" "$(date -d $WHEN)" $HOURS $MINUTES
-
-rtcwake -t $DEST_TIME -m no  # /usr/bin/chmod ugo+r /dev/rtc0 
-                             # for this to work
-
-hook() { 
-    # ~/r/alrm/postwakeup.sh
+hook() {
+    printf "\nWork hard and have a nice day.\n"
     exit
 }
 trap hook SIGINT
 
-while [[ $(date +%s) -lt $DEST_TIME ]]; do
-    sleep 1m
-done
+PARSED=$(date -d $UNPARSED +%s)
+
+# /usr/bin/chmod ugo+r /dev/rtc0
+# for this to work
+rtcwake -t $PARSED -m no 1>/dev/null 2>&1 && printf "${GREEN}rtcwake${reset_color}\n" || printf "${RED}rtcwake${reset_color}\n"
 
 while true; do
-    mpv --shuffle --no-video ~/Music/alarmtone
-    espeak "$(date +%H:%M)"
-    echo Repeating in $PAUSE minutes; sleep ${PAUSE}m
+    if [[ $(date +%s) -ge $PARSED ]]; then
+        printf "\r>> %s ${BOLD_RED}[now]${reset_color}%17s\n" "$(date -d @$PARSED '+%H:%M %m/%d/%Y')"
+        mpv --shuffle --no-video ~/Music/alarmtone
+        espeak "$(date +%H:%M)" 2>/dev/null
+        PARSED=$((int($(date '+%s') + $PAUSE * 60)))
+        printf "\n"
+        rtcwake -t $PARSED -m no 1>/dev/null 2>&1 && printf "${GREEN}rtcwake${reset_color}\n" || printf "${RED}rtcwake${reset_color}\n"
+    fi
+    DIFFSEC=$(($PARSED - $(date +%s)))
+    HOURS=$((int($DIFFSEC / 60. / 60.)))
+    MINUTES=$((int(($DIFFSEC - $HOURS * 60 * 60) / 60.)))
+    SECONDS=$(($DIFFSEC - ($HOURS * 60 * 60 + $MINUTES * 60)))
+    printf "\r>> %s [in ${BOLD_MAGENTA}%d:%02d:%02d${reset_color} from now]" "$(date -d @$PARSED '+%H:%M %m/%d/%Y')" $HOURS $MINUTES $SECONDS
+    sleep 1s
 done
 
