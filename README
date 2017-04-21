@@ -1,0 +1,24 @@
+ABOUT
+
+A simple shell alarm clock.
+
+The script assumes your alarm tone is located at ~/Music/alarmtone and your
+music player is mpv. If that's not the case, edit accordingly.
+
+USAGE
+
+Pass a `date`-parseable date string as the parameters.
+
+Example:
+$ alrm +8 hours
+
+TODO
+
+- sound output control
+- make install
+- make the source a bit readable
+- port to bash
+
+LICENSE
+
+Are you laughing?
